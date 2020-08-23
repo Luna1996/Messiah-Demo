@@ -5,14 +5,10 @@ using WCore;
 using UnityEngine;
 
 public class TestWCore {
-  struct A {
-    public int a { set; get; }
-  }
   [Test]
   public void GeneralTest() {
-    var type = typeof(A);
-    var pro = type.GetProperty("a");
-    Debug.Log(pro.PropertyType);
-    Assert.True(pro.PropertyType == typeof(int));
+    Dictionary<int, object> a = new Dictionary<int, object>();
+    a[10] = 1;
+    Debug.Log(a[10]);
   }
 }
