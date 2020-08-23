@@ -1,7 +1,6 @@
 namespace WCore {
-  public class Core {
-    public void RegisterProdiver<T>() where T : IProvider { 
-      
-    }
+  using System;
+  using System.Collections.Generic;
+  public sealed class Core {
   }
 }
