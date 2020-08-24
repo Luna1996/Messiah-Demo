@@ -1,13 +1,12 @@
 namespace WCore {
   using System;
   public interface IService {
-    Core Core { get; }
+    Core Core { set; get; }
+    Type Type { set; get; }
+    Phase Creation { set; get; }
     void OnAttach();
     void OnDetach();
   }
-
-  [AttributeUsage(AttributeTargets.Class)]
-  public class SingleAttribute : Attribute { }
 
   [AttributeUsage(AttributeTargets.Property)]
   public class InjectAttribute : Attribute { }

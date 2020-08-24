@@ -2,13 +2,23 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using WCore;
-using UnityEngine;
 
 public class TestWCore {
+  interface IA {
+  }
+  interface IB : IA {
+    int a { set; get; }
+  }
+  interface IC : IA {
+    int a { set; get; }
+  }
+  class D : IB, IC {
+    public int a { set; get; }
+  }
+
   [Test]
-  public void GeneralTest() {
-    Dictionary<int, object> a = new Dictionary<int, object>();
-    a[10] = 1;
-    Debug.Log(a[10]);
+  public void GeneralTest<I, S>()
+  where S : I {
+    D d = new D();
   }
 }

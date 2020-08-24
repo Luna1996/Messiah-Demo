@@ -7,7 +7,7 @@ namespace WCore {
     }
   }
 
-  public enum PreparePhase : byte {
-    UnPrepared, Preparing, Prepared
+  public enum Phase : byte {
+    Before, During, After
   }
 }
