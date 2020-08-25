@@ -6,7 +6,7 @@ namespace WCore {
 
   public sealed partial class Core {
     #region 服务相关
-    private Binds binds { get; } = new Binds();
+    private Binds binds;
 
     public void Bind<I, S>()
     where I : IService
@@ -35,9 +35,9 @@ namespace WCore {
     public void Bind(BindRule[] bindRules) {
       foreach (var bindRule in bindRules)
         typeof(Core)
-        .GetMethod(nameof(Core.Bind))
-        .MakeGenericMethod(bindRule.Item1, bindRule.Item2)
-        .Invoke(this, null);
+          .GetMethod(nameof(Core.Bind))
+          .MakeGenericMethod(bindRule.Item1, bindRule.Item2)
+          .Invoke(this, null);
     }
 
     public void UnBind<I>()
@@ -50,9 +50,9 @@ namespace WCore {
     public void UnBindAll() {
       foreach (var pair in binds)
         typeof(Provider)
-        .GetMethod(nameof(Provider.OnDetach))
-        .MakeGenericMethod(pair.Key)
-        .Invoke(pair.Value, null);
+          .GetMethod(nameof(Provider.OnDetach))
+          .MakeGenericMethod(pair.Key)
+          .Invoke(pair.Value, null);
       binds.Clear();
     }
 
@@ -106,7 +106,7 @@ namespace WCore {
     #endregion
 
     #region 插件相关
-    private Plugs plugs { get; } = new Plugs();
+    private Plugs plugs;
 
     public void Plug(Core core) {
       if (!plugs.Contains(core))
@@ -135,6 +135,8 @@ namespace WCore {
     #region 默认行为
     private static BindRule[] DefaultRules { get; set; }
     public Core(BindRule[] initRules = null) {
+      binds = new Binds();
+      plugs = new Plugs();
       if (initRules == null)
         Bind(DefaultRules);
       else
