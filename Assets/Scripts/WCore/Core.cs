@@ -1,113 +1,144 @@
 namespace WCore {
   using System;
-  using System.Collections.Generic;
-  using BindList = System.Collections.Generic.Dictionary<System.Type, WCore.IService>;
+  using Binds = System.Collections.Generic.Dictionary<System.Type, WCore.Provider>;
+  using Plugs = System.Collections.Generic.List<WCore.Core>;
+  using BindRule = System.Tuple<System.Type, System.Type>;
 
   public sealed partial class Core {
     #region 服务相关
-    private BindList binds { get; } = new BindList();
+    private Binds binds { get; } = new Binds();
 
     public void Bind<I, S>()
     where I : IService
-    where S : Service {
-      if (binds.ContainsKey(typeof(I)))
+    where S : Provider, I, new() {
+      // 已注册服务
+      if (IsLocal<I>()) {
+        // 已绑定相同提供者，无动作
+        if (binds[typeof(I)].GetType() == typeof(S))
+          return;
+        // 已绑定不同提供者，卸载原服务实例
         UnBind<I>();
-      binds[typeof(I)] = new Service(typeof(S), this);
+      }
+      // 已绑定其他服务的提供者
+      foreach (var pair in binds)
+        if (pair.Value.GetType() == typeof(S)) {
+          binds[typeof(I)] = pair.Value;
+          return;
+        }
+      // 首次绑定的提供者
+      var provider = new S();
+      provider.Core = this;
+      binds[typeof(I)] = provider;
+      provider.OnAttach<I>();
+    }
+
+    public void Bind(BindRule[] bindRules) {
+      foreach (var bindRule in bindRules)
+        typeof(Core)
+        .GetMethod(nameof(Core.Bind))
+        .MakeGenericMethod(bindRule.Item1, bindRule.Item2)
+        .Invoke(this, null);
     }
 
     public void UnBind<I>()
     where I : IService {
       if (binds.ContainsKey(typeof(I)))
-        binds[typeof(I)].OnDetach();
+        binds[typeof(I)].OnDetach<I>();
       binds.Remove(typeof(I));
     }
 
     public void UnBindAll() {
       foreach (var pair in binds)
-        pair.Value.OnDetach();
+        typeof(Provider)
+        .GetMethod(nameof(Provider.OnDetach))
+        .MakeGenericMethod(pair.Key)
+        .Invoke(pair.Value, null);
       binds.Clear();
     }
 
     public bool Has<I>()
-        where I : IService {
-      if (binds.ContainsKey(typeof(I)))
-        return true;
+    where I : IService {
+      return IsLocal<I>() || IsExtern<I>();
+    }
+
+    public bool Has<I>(out I iservice)
+    where I : IService {
+      return IsLocal(out iservice) || IsExtern(out iservice);
+    }
+
+    public bool IsLocal<I>()
+    where I : IService {
+      return binds.ContainsKey(typeof(I));
+    }
+
+    public bool IsLocal<I>(out I iservice)
+    where I : IService {
+      Provider service;
+      var result = binds.TryGetValue(typeof(I), out service);
+      iservice = (I)(IService)service;
+      return result;
+    }
+
+    public bool IsExtern<I>()
+    where I : IService {
       foreach (var core in plugs)
         if (core.Has<I>())
           return true;
       return false;
     }
 
-    public bool TryGet<I>(out IService service)
-          where I : IService {
-      if (binds.TryGetValue(typeof(I), out service))
-        return true;
+    public bool IsExtern<I>(out I iservice)
+    where I : IService {
       foreach (var core in plugs)
-        if (core.TryGet<I>(out service))
+        if (core.Has(out iservice))
           return true;
+      iservice = default(I);
       return false;
     }
 
     public I Get<I>()
-    where I : class, IService {
-      IService service;
-      // 判断是否注册，未注册直接抛出异常
-      if (TryGet<I>(out service)) {
-        switch (service.Creation) {
-          // 首次唤起，依赖注入
-          case Phase.Before:
-            service.Creation = Phase.During;
-            try {
-              Inject(service);
-            } catch (CoreExeption) {
-              service.Creation = Phase.Before;
-              throw;
-            }
-            service.Creation = Phase.After;
-            break;
-          // 检测到循环依赖，抛出异常
-          case Phase.During:
-            service.Creation = Phase.Before;
-            throw new LoopRelyException(typeof(I).ToString());
-        }
-        return (I)service;
-      } else {
-        throw new UnresolvedRelyException(typeof(I).ToString());
-      }
-    }
-
-    public void Inject<I>(I service)
     where I : IService {
-      foreach (var property in typeof(I).GetProperties()) {
-        if (Utility.HasAttribute<InjectAttribute>(property.PropertyType)) {
-          var inject = typeof(Core).GetMethod("Get").MakeGenericMethod(property.PropertyType).Invoke(this, null);
-          property.SetValue(service, inject);
-        }
-      }
-      typeof(I).GetProperty("Core").SetValue(service, this);
+      IService iservice;
+      if (Has(out iservice))
+        return (I)iservice;
+      throw new UnprovidedServiceException(typeof(I).ToString());
     }
     #endregion
 
     #region 插件相关
-    private List<Core> plugs { get; } = new List<Core>();
+    private Plugs plugs { get; } = new Plugs();
 
     public void Plug(Core core) {
       if (!plugs.Contains(core))
         plugs.Add(core);
     }
 
-    public void UnPlug(Core core) {
+    public void UnPlug(Core core, bool shouldPurge = false) {
       plugs.Remove(core);
-      core.Purge();
+      if (shouldPurge)
+        core.Purge();
     }
 
-    public void UnPlug() {
-      foreach (var core in plugs)
-        core.Purge();
+    public void UnPlugAll(bool shouldPurge = false) {
+      if (shouldPurge)
+        foreach (var core in plugs)
+          core.Purge();
       plugs.Clear();
     }
 
     public void Purge() {
+      UnBindAll();
+      UnPlugAll(true);
+    }
+    #endregion
+
+    #region 默认行为
+    private static BindRule[] DefaultRules { get; set; }
+    public Core(BindRule[] initRules = null) {
+      if (initRules == null)
+        Bind(DefaultRules);
+      else
+        Bind(initRules);
     }
     #endregion
 
@@ -118,8 +149,8 @@ namespace WCore {
     public class LoopRelyException : CoreExeption {
       public LoopRelyException(string desc) : base(desc) { }
     }
-    public class UnresolvedRelyException : CoreExeption {
-      public UnresolvedRelyException(string desc) : base(desc) { }
+    public class UnprovidedServiceException : CoreExeption {
+      public UnprovidedServiceException(string desc) : base(desc) { }
     }
     #endregion
   }
