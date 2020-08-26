@@ -1,20 +1,24 @@
-namespace WCore {
+namespace WCore.Provider {
+  using System;
   using System.Collections.Generic;
-  using Pools = System.Collections.Generic.List<WCore.IPool<WCore.IReset>>;
+  using WCore.Generic;
+  using WCore.Interface;
+  using Pools = System.Collections.Generic.List<WCore.Interface.IPool<WCore.Generic.IReset>>;
 
-  public class PoolProvider : Provider, IPoolService {
+  public class PoolProvider : BaseProvider, IPoolService {
 
     private Pools pools;
 
-    public override void OnAttach<I>() {
-      if (pools == null)
-        pools = new Pools();
-    }
-
-    public override void OnDetach<I>() {
-      foreach (var pool in pools)
-        pool.Clear();
-      pools.Clear();
+    private PoolProvider() {
+      onAttach += (Core core, Type type) => {
+        if (pools == null)
+          pools = new Pools();
+      };
+      onDetach += (Core core, Type type) => {
+        foreach (var pool in pools)
+          pool.Clear();
+        pools.Clear();
+      };
     }
 
     public IPool<Item> CreatePool<Item>()

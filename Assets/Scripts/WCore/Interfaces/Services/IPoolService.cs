@@ -1,5 +1,7 @@
-namespace WCore {
-  public interface IPoolService : IService {
+namespace WCore.Interface {
+  using WCore.Generic;
+
+  public interface IPoolService {
     IPool<Item> CreatePool<Item>() where Item : IReset, new();
     void DeletePool<Item>(IPool<Item> pool, bool wait = false) where Item : IReset;
   }
