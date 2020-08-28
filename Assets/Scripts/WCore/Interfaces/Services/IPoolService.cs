@@ -1,8 +1,7 @@
 namespace WCore.Interface {
-  using WCore.Generic;
 
   public interface IPoolService {
-    IPool<Item> CreatePool<Item>() where Item : IReset, new();
+    IPool<Item> CreatePool<Item>(int capacity = 5) where Item : IReset, new();
     void DeletePool<Item>(IPool<Item> pool, bool wait = false) where Item : IReset;
   }
 
@@ -10,5 +9,10 @@ namespace WCore.Interface {
     Item Borrow(bool wait = false);
     void Return(Item item);
     void Clear(bool wait = false);
+  }
+
+  public interface IReset {
+    bool NeedReset { get; set; }
+    void Reset();
   }
 }

@@ -1,15 +1,14 @@
 namespace WCore.Provider {
   using System;
   using System.Collections.Generic;
-  using WCore.Generic;
   using WCore.Interface;
-  using Pools = System.Collections.Generic.List<WCore.Interface.IPool<WCore.Generic.IReset>>;
+  using Pools = System.Collections.Generic.List<WCore.Interface.IPool<WCore.Interface.IReset>>;
 
   public class PoolProvider : BaseProvider, IPoolService {
 
     private Pools pools;
 
-    private PoolProvider() {
+    public PoolProvider() {
       onAttach += (Core core, Type type) => {
         if (pools == null)
           pools = new Pools();
@@ -21,9 +20,9 @@ namespace WCore.Provider {
       };
     }
 
-    public IPool<Item> CreatePool<Item>()
+    public IPool<Item> CreatePool<Item>(int capacity)
     where Item : IReset, new() {
-      var pool = new Pool<Item>();
+      var pool = new Pool<Item>(capacity);
       pools.Add((IPool<IReset>)pool);
       return pool;
     }
@@ -38,6 +37,14 @@ namespace WCore.Provider {
   public class Pool<Item> : IPool<Item>
   where Item : IReset, new() {
     private List<Item> pool;
+    private int Occupied { get; set; }
+
+    public Pool(int capacity) {
+      pool = new List<Item>();
+      Capacity = 5;
+      Occupied = 0;
+    }
+
     public int Capacity {
       get { return pool.Count; }
       set {
@@ -58,12 +65,6 @@ namespace WCore.Provider {
           // 报错或者等待
         }
       }
-    }
-    public int Occupied { get; set; }
-
-    public Pool() {
-      pool = new List<Item>();
-      Occupied = 0;
     }
 
     public Item Borrow(bool wait) {

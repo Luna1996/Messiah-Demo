@@ -17,9 +17,9 @@ namespace WCore {
       relys = new Relys();
       plugs = new Plugs();
       if (initRules == null)
-        Bind(defaultRules);
+        BindList(defaultRules);
       else
-        Bind(initRules);
+        BindList(initRules);
     }
     #endregion
 
@@ -63,19 +63,30 @@ namespace WCore {
     HandleRely:
       // 处理依赖
       binds[typeof(I)] = newP;
-      foreach (var field in relys[newP]) {
-        field.SetValue(newP, Get(field.FieldType));
-      }
+      // 别人 -> 自己
+      foreach (var field in relys[newP])
+        field.SetValue(newP, 
+          typeof(Core)
+            .GetMethod(nameof(Core.Get))
+            .MakeGenericMethod(field.FieldType)
+            .Invoke(this, null));
+      // 自己 -> 别人
+      foreach (var pair in relys)
+        if (pair.Key != newP)
+          foreach (var field in pair.Value)
+            if (field.FieldType == typeof(I))
+              field.SetValue(pair.Key, newP);
       newP.onAttach?.Invoke(this, typeof(I));
       onProviderChanged?.Invoke(oldS, newS);
     }
 
-    public void Bind((Type, Type)[] bindRules) {
-      foreach (var bindRule in bindRules)
+    public void BindList((Type, Type)[] bindRules) {
+      foreach (var bindRule in bindRules) {
         typeof(Core)
           .GetMethod(nameof(Core.Bind))
           .MakeGenericMethod(bindRule.Item1, bindRule.Item2)
           .Invoke(this, null);
+      }
     }
 
     public void UnBind<I>()
@@ -137,13 +148,6 @@ namespace WCore {
       if (Has(out iservice))
         return iservice;
       throw new UnprovidedServiceException(typeof(I).ToString());
-    }
-
-    public object Get(Type type) {
-      return typeof(Core)
-              .GetMethod(nameof(Core.Get))
-              .MakeGenericMethod(type)
-              .Invoke(this, null);
     }
     #endregion
 
