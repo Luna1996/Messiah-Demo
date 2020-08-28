@@ -21,14 +21,13 @@ namespace WCore.Provider {
     }
 
     public IPool<Item> CreatePool<Item>(int capacity)
-    where Item : IReset, new() {
+    where Item : new() {
       var pool = new Pool<Item>(capacity);
       pools.Add(pool);
       return pool;
     }
 
-    public void DeletePool<Item>(IPool<Item> pool, bool wait)
-    where Item : IReset {
+    public void DeletePool<Item>(IPool<Item> pool, bool wait) {
       pools.Remove(pool);
       pool.Clear();
     }
@@ -36,61 +35,25 @@ namespace WCore.Provider {
   }
 
   public class Pool<Item> : IPool<Item>
-  where Item : IReset, new() {
-    private List<Item> pool;
-    private int Occupied { get; set; }
+  where Item : new() {
+    private Queue<Item> pool;
 
     public Pool(int capacity) {
-      pool = new List<Item>();
-      Capacity = capacity;
-      Occupied = 0;
-    }
-
-    public int Capacity {
-      get { return pool.Count; }
-      set {
-        if (value >= Capacity) {
-          pool.Capacity = value;
-          while (value != Capacity) {
-            var item = new Item();
-            item.NeedReset = false;
-            item.Reset();
-            pool.Add(item);
-          }
-        } else if (value >= Occupied) {
-          pool.RemoveAll(i => !i.NeedReset && value != Occupied);
-          pool.TrimExcess();
-        } else {
-          pool.RemoveAll(i => !i.NeedReset);
-          pool.TrimExcess();
-          // 报错或者等待
-        }
-      }
+      pool = new Queue<Item>(capacity);
     }
 
     public Item Borrow(bool wait) {
-      if (Occupied == Capacity)
+      if (pool.Count == 0)
         return default(Item);
-      var item = pool.Find(i => !i.NeedReset);
-      if (item != null) {
-        item.NeedReset = true;
-        Occupied++;
-      }
-      return item;
+      return pool.Dequeue();
     }
 
     public void Return(Item item) {
-      item.Reset();
-      item.NeedReset = false;
-      Occupied--;
+      pool.Enqueue(item);
     }
 
     public void Clear(bool wait) {
-      foreach (var item in pool)
-        if (item.NeedReset)
-          item.Reset();
       pool.Clear();
-      pool.Capacity = 0;
     }
   }
 

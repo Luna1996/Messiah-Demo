@@ -10,7 +10,7 @@ using System.Collections.Generic;
 public class TestWCore {
   public class T : IReset {
     public bool NeedReset { get; set; }
-    public void Reset() { }
+    public void Reset() { Debug.Log("Reset"); }
   }
   [Test]
   public void GeneralTest() {
