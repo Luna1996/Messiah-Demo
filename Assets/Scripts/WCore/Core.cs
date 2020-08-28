@@ -4,6 +4,7 @@ namespace WCore {
   using Provider;
   using Binds = System.Collections.Generic.Dictionary<System.Type, WCore.Provider.BaseProvider>;
   using Plugs = System.Collections.Generic.List<WCore.Core>;
+  using Relys = System.Collections.Generic.Dictionary<WCore.Provider.BaseProvider, System.Reflection.FieldInfo[]>;
 
   public sealed partial class Core {
     #region 默认行为
@@ -13,6 +14,7 @@ namespace WCore {
 
     public Core((Type, Type)[] initRules = null) {
       binds = new Binds();
+      relys = new Relys();
       plugs = new Plugs();
       if (initRules == null)
         Bind(defaultRules);
@@ -21,47 +23,51 @@ namespace WCore {
     }
     #endregion
 
-    #region 依赖相关
-    public Action<Type, BaseProvider, BaseProvider> onProviderChange;
-
-    private void OnProviderChange(Type type, BaseProvider oldP, BaseProvider newP) {
-    }
+    #region 回调事件
+    public Action<object, object> onProviderChanged;
     #endregion
 
     #region 服务相关
     private Binds binds;
+    private Relys relys;
 
     public void Bind<I, P>()
     where I : class
     where P : BaseProvider, I, new() {
-      I oldS;
-      I newS;
-      // 已注册服务
+      I oldS; P oldP;
+      I newS; P newP;
       if (IsLocal(out oldS)) {
-        // 已绑定相同提供者，无动作
-        if (oldS.GetType() == typeof(P))
+        // 本地已绑定服务
+        oldP = (P)oldS;
+        if (oldP.GetType() == typeof(P))
+          // 相同提供者，无动作
           return;
-        // 已绑定不同提供者，预释放
-        binds[typeof(I)].onDetach(this, typeof(I));
+        else {
+          // 不同提供者，预释放
+          oldP.onDetach?.Invoke(this, typeof(I));
+          relys.Remove(oldP);
+        }
       } else
         IsExtern(out oldS);
       // 提供者已绑定到其他服务
       foreach (var pair in binds)
         if (pair.Value.GetType() == typeof(P)) {
-          binds[typeof(I)] = pair.Value;
-          newS = (P)pair.Value;
+          newP = (P)pair.Value;
+          newS = newP;
           goto HandleRely;
         }
       // 提供者首次绑定
-      P provider = new P();
-      binds[typeof(I)] = provider;
-      provider.onAttach(this, typeof(I));
-      newS = provider;
+      newP = new P();
+      newS = newP;
+      relys[newP] = Utility.GetInjects<P>();
     HandleRely:
       // 处理依赖
-      P oldP = (P)oldS;
-      P newP = (P)newS;
-      OnProviderChange(typeof(I), oldP, newP);
+      binds[typeof(I)] = newP;
+      foreach (var field in relys[newP]) {
+        field.SetValue(newP, Get(field.FieldType));
+      }
+      newP.onAttach?.Invoke(this, typeof(I));
+      onProviderChanged?.Invoke(oldS, newS);
     }
 
     public void Bind((Type, Type)[] bindRules) {
@@ -74,7 +80,7 @@ namespace WCore {
 
     public void UnBind<I>()
     where I : class {
-      if (binds.ContainsKey(typeof(I)))
+      if (IsLocal<I>())
         binds[typeof(I)].onDetach(this, typeof(I));
       binds.Remove(typeof(I));
     }
@@ -131,6 +137,13 @@ namespace WCore {
       if (Has(out iservice))
         return iservice;
       throw new UnprovidedServiceException(typeof(I).ToString());
+    }
+
+    public object Get(Type type) {
+      return typeof(Core)
+              .GetMethod(nameof(Core.Get))
+              .MakeGenericMethod(type)
+              .Invoke(this, null);
     }
     #endregion
 
