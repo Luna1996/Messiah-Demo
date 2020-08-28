@@ -59,7 +59,7 @@ namespace WCore {
       // 提供者首次绑定
       newP = new P();
       newS = newP;
-      relys[newP] = Utility.GetInjects<P>();
+      relys[newP] = Utility.GetInjects(typeof(P));
     HandleRely:
       // 处理依赖
       binds[typeof(I)] = newP;

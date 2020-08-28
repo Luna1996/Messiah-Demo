@@ -2,7 +2,7 @@ namespace WCore.Provider {
   using System;
   using System.Collections.Generic;
   using WCore.Interface;
-  using Pools = System.Collections.Generic.List<WCore.Interface.IPool<WCore.Interface.IReset>>;
+  using Pools = System.Collections.Generic.List<object>;
 
   public class PoolProvider : BaseProvider, IPoolService {
 
@@ -15,7 +15,7 @@ namespace WCore.Provider {
       };
       onDetach += (Core core, Type type) => {
         foreach (var pool in pools)
-          pool.Clear();
+          pool.GetType().GetMethod("Clear").Invoke(pool, null);
         pools.Clear();
       };
     }
@@ -23,13 +23,14 @@ namespace WCore.Provider {
     public IPool<Item> CreatePool<Item>(int capacity)
     where Item : IReset, new() {
       var pool = new Pool<Item>(capacity);
-      pools.Add((IPool<IReset>)pool);
+      pools.Add(pool);
       return pool;
     }
 
     public void DeletePool<Item>(IPool<Item> pool, bool wait)
     where Item : IReset {
-      pools.Remove((IPool<IReset>)pool);
+      pools.Remove(pool);
+      pool.Clear();
     }
 
   }
@@ -41,7 +42,7 @@ namespace WCore.Provider {
 
     public Pool(int capacity) {
       pool = new List<Item>();
-      Capacity = 5;
+      Capacity = capacity;
       Occupied = 0;
     }
 

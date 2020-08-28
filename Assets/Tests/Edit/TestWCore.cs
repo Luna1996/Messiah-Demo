@@ -5,6 +5,7 @@ using System.Reflection;
 using WCore;
 using WCore.Interface;
 using WCore.Provider;
+using System.Collections.Generic;
 
 public class TestWCore {
   public class T : IReset {
@@ -15,8 +16,8 @@ public class TestWCore {
   public void GeneralTest() {
     Core core = new Core();
     var pools = core.Get<IPoolService>();
-    var pool = pools.CreatePool<T>();
+    var pool = pools.CreatePool<T>(9);
     for (int i = 0; i < 10; i++)
-      Debug.Log(null == pool.Borrow());
+      Debug.Log(pool.Borrow());
   }
 }

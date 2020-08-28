@@ -7,13 +7,6 @@ namespace WCore {
 
   public static class Utility {
 
-    public static FieldInfo[] GetInjects<I>() {
-      return (from field in typeof(I).GetFields()
-              where field.GetCustomAttribute<InjectAttribute>() != null
-              select field)
-             .ToArray();
-    }
-
     public static FieldInfo[] GetInjects(Type type) {
       return (from field in type.GetFields()
               where field.GetCustomAttribute<InjectAttribute>() != null
@@ -28,8 +21,4 @@ namespace WCore {
 
   [AttributeUsage(AttributeTargets.Field)]
   public class InjectAttribute : Attribute { }
-
-  public enum Phase : byte {
-    Before, During, After
-  }
 }
