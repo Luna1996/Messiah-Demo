@@ -8,16 +8,37 @@ using WCore.Provider;
 using System.Collections.Generic;
 
 public class TestWCore {
-  public class T : IReset {
-    public bool NeedReset { get; set; }
-    public void Reset() { Debug.Log("Reset"); }
+  public class T {
+    ~T() { Debug.Log("~T"); }
   }
+
   [Test]
-  public void GeneralTest() {
+  public void PoolServiceTest() {
     Core core = new Core();
-    var pools = core.Get<IPoolService>();
-    var pool = pools.CreatePool<T>(9);
-    for (int i = 0; i < 10; i++)
-      Debug.Log(pool.Borrow());
+    var pool = core.Get<IPoolService>();
+    Queue<T> t = new Queue<T>();
+    for (int i = 0; i < 10; i++) {
+      t.Enqueue(pool.Borrow<T>());
+      pool.Return(t.Dequeue());
+    }
+    t.Clear();
+    pool.Return<T>();
+    var g = new T();
+    g = null;
+    System.GC.Collect();
+    System.GC.WaitForPendingFinalizers();
+  }
+
+  [Test]
+  public void ActionTest() {
+    Action a = null;
+    Action b = null;
+    a += ActionTest;
+    b += ActionTest;
+    Debug.Log(a == b);
+  }
+
+  [Test]
+  public void TrivalTest() {
   }
 }
