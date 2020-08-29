@@ -8,6 +8,13 @@ namespace WCore.Provider {
 
     private Pools pools = new Pools();
 
+    public void With<Item>(Action<Item> proc)
+    where Item : class, new() {
+      var item = Borrow<Item>();
+      proc?.Invoke(item);
+      Return(item);
+    }
+
     public Item Borrow<Item>()
     where Item : class, new() {
       var type = typeof(Item);
@@ -52,7 +59,6 @@ namespace WCore.Provider {
 
 
     ~PoolProvider() {
-      UnityEngine.Debug.Log("~PoolProvider");
       foreach (var type in pools.Keys)
         typeof(PoolProvider)
           .GetMethod(nameof(PoolProvider.Return))

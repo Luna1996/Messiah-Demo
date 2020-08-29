@@ -1,41 +1,61 @@
 namespace WCore.Provider {
   using System;
   using Interface;
-  using Events = System.Collections.Generic.Dictionary<System.Type, System.Delegate>;
+  using Actions = System.Collections.Generic.Dictionary<System.Enum, System.Delegate>;
 
-  public class EventProvider : IEventService {
-    [Inject]
-    private readonly IPoolService iPoolService;
+  public class EventProvider : BaseProvider, IEventService {
+    private Actions actions;
 
-    private Events events;
+    public EventProvider() => actions = new Actions();
 
-    public void Listen<Event>(Action<Event> callback) {
-      var type = typeof(Event);
-      Action<Event> evt;
-      if (events.ContainsKey(type)) {
-        evt = (Action<Event>)events[type];
-        evt += callback;
-      } else {
-        evt = null;
-        evt += callback;
-        events[type] = evt;
+    #region 零
+    public void Notify(Enum id) {
+      if (actions.ContainsKey(id))
+        ((Action)actions[id])();
+    }
+
+    public void Listen(Enum id, Action callback) {
+      if (actions.ContainsKey(id)) {
+        var action = (Action)actions[id];
+        action += callback;
+      } else
+        actions.Add(id, callback);
+    }
+
+    public void Ignore(Enum id, Action callback) {
+      if (actions.ContainsKey(id)) {
+        var action = (Action)actions[id];
+        action -= callback;
+        if (action.GetInvocationList().Length == 0)
+          actions.Remove(id);
       }
     }
+    #endregion
 
-    public void Ignore<Event>(Action<Event> callback = null) {
-      var type = typeof(Event);
-      if (events.ContainsKey(type)) {
-        if (callback == null) { events.Remove(type); } else {
-          var evt = (Action<Event>)events[type];
-          evt -= callback;
-        }
+    #region 一
+    public void Notify<A>(Enum id, A a) {
+      if (actions.ContainsKey(id))
+        ((Action<A>)actions[id])(a);
+    }
+
+    public void Listen<A>(Enum id, Action<A> callback) {
+      if (actions.ContainsKey(id)) {
+        var action = (Action<A>)actions[id];
+        action += callback;
+      } else
+        actions.Add(id, callback);
+    }
+
+    public void Ignore<A>(Enum id, Action<A> callback) {
+      if (actions.ContainsKey(id)) {
+        var action = (Action<A>)actions[id];
+        action -= callback;
+        if (action == null)
+          actions.Remove(id);
       }
     }
+    #endregion
 
-    public void Notify<Event>(Action<Event> setter) { 
-    }
-
-    public void Notify<Event>(Event evt) { }
-    public void Purge() { }
+    ~EventProvider() => actions.Clear();
   }
 }

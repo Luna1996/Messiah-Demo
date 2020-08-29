@@ -9,7 +9,8 @@ namespace WCore {
   public sealed partial class Core {
     #region 默认行为
     private static (Type, Type)[] defaultRules = {
-      (typeof(IPoolService),typeof(PoolProvider))
+      (typeof(IPoolService),typeof(PoolProvider)),
+      (typeof(IEventService), typeof(EventProvider))
     };
 
     public Core((Type, Type)[] initRules = null) {
@@ -65,7 +66,7 @@ namespace WCore {
       binds[typeof(I)] = newP;
       // 别人 -> 自己
       foreach (var field in relys[newP])
-        field.SetValue(newP, 
+        field.SetValue(newP,
           typeof(Core)
             .GetMethod(nameof(Core.Get))
             .MakeGenericMethod(field.FieldType)
@@ -80,11 +81,11 @@ namespace WCore {
       onProviderChanged?.Invoke(oldS, newS);
     }
 
-    public void BindList((Type, Type)[] bindRules) {
+    public void BindList((Type s, Type p)[] bindRules) {
       foreach (var bindRule in bindRules) {
         typeof(Core)
           .GetMethod(nameof(Core.Bind))
-          .MakeGenericMethod(bindRule.Item1, bindRule.Item2)
+          .MakeGenericMethod(bindRule.s, bindRule.p)
           .Invoke(this, null);
       }
     }
