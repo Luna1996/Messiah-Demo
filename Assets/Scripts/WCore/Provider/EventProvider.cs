@@ -5,6 +5,8 @@ namespace WCore.Provider {
 
   public class EventProvider : BaseProvider, IEventService {
     private Actions actions;
+    [Inject]
+    private readonly IEventService eventService;
 
     public EventProvider() => actions = new Actions();
 
