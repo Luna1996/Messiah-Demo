@@ -52,6 +52,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "editor.tabSize": 2,
-    "editor.wordWrap": "on"
+    "editor.tabSize": 2
 }

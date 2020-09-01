@@ -1,5 +1,6 @@
 namespace WCore {
   using System;
+  using System.Collections.Generic;
   using Interface;
   using Provider;
   using Binds = System.Collections.Generic.Dictionary<System.Type, WCore.Provider.BaseProvider>;
@@ -24,6 +25,18 @@ namespace WCore {
     }
     #endregion
 
+    #region 生命周期
+    public void Init() {
+      foreach (var provider in relys.Keys)
+        provider.OnInit(this);
+    }
+
+    public void Terminate() {
+      foreach (var provider in relys.Keys)
+        provider.OnTerminate(this);
+    }
+    #endregion
+
     #region 回调事件
     public Action<object, object> onProviderChanged;
     #endregion
@@ -45,7 +58,6 @@ namespace WCore {
           return;
         else {
           // 不同提供者，预释放
-          oldP.onDetach?.Invoke(this, typeof(I));
           relys.Remove(oldP);
         }
       } else
@@ -61,9 +73,6 @@ namespace WCore {
       newP = new P();
       newS = newP;
       relys[newP] = Utility.GetInjects(typeof(P));
-    HandleRely:
-      // 处理依赖
-      binds[typeof(I)] = newP;
       // 别人 -> 自己
       foreach (var field in relys[newP])
         field.SetValue(newP,
@@ -71,13 +80,16 @@ namespace WCore {
             .GetMethod(nameof(Core.Get))
             .MakeGenericMethod(field.FieldType)
             .Invoke(this, null));
+      HandleRely:
+      // 处理依赖
+      binds[typeof(I)] = newP;
       // 自己 -> 别人
       foreach (var pair in relys)
         if (pair.Key != newP)
           foreach (var field in pair.Value)
             if (field.FieldType == typeof(I))
               field.SetValue(pair.Key, newP);
-      newP.onAttach?.Invoke(this, typeof(I));
+      newP.OnAttach(this);
       onProviderChanged?.Invoke(oldS, newS);
     }
 
@@ -93,13 +105,13 @@ namespace WCore {
     public void UnBind<I>()
     where I : class {
       if (IsLocal<I>())
-        binds[typeof(I)].onDetach(this, typeof(I));
+        binds[typeof(I)].OnDetach(this);
       binds.Remove(typeof(I));
     }
 
     public void UnBindAll() {
       foreach (var pair in binds)
-        pair.Value.onDetach(this, pair.Key);
+        pair.Value.OnDetach(this);
       binds.Clear();
     }
 
