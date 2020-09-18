@@ -61,25 +61,38 @@ public class TestWCore {
     var p = new object[] { t };
     var f1 = typeof(TestWCore).GetMethod(nameof(TestWCore.Test));
     StopWatch s = new StopWatch();
+
+
     s.Start();
     for (int i = 0; i < 100000; i++)
       f1.Invoke(this, p);
     s.Stop();
     Debug.Log($"Reflection: {s.ElapsedTicks} ticks");
+
+
     Action<Tuple<int, List<int>>> f3 = Test;
     s.Restart();
     for (int i = 0; i < 100000; i++)
       f3.Invoke(t);
     s.Stop();
     Debug.Log($"Delegate:   {s.ElapsedTicks} ticks");
+
+
     s.Restart();
     for (int i = 0; i < 100000; i++)
       Test(t);
     s.Stop();
     Debug.Log($"Nomal:      {s.ElapsedTicks} ticks");
+
+    Action<Tuple<int, List<int>>> f4 = (Action<Tuple<int, List<int>>>)Delegate.CreateDelegate(typeof(Action<Tuple<int, List<int>>>), typeof(TestWCore), "Test");
+    s.Restart();
+    for (int i = 0; i < 100000; i++)
+      f4(t);
+    s.Stop();
+    Debug.Log($"Fast Ref:   {s.ElapsedTicks} ticks");
   }
 
-  public void Test(Tuple<int, List<int>> t) {
+  public static void Test(Tuple<int, List<int>> t) {
   }
 
   [Test]

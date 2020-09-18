@@ -6,7 +6,7 @@ namespace Messiah {
   using UnityEngine.ResourceManagement.AsyncOperations;
 
   public class Messiah : MonoBehaviour {
-    public static readonly Core core = new Core();
+    public static readonly Core Core = new Core();
 
     void Awake() {
       DontDestroyOnLoad(gameObject);

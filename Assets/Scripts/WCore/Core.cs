@@ -3,9 +3,9 @@ namespace WCore {
   using System.Collections.Generic;
   using Interface;
   using Provider;
-  using Binds = System.Collections.Generic.Dictionary<System.Type, WCore.Provider.BaseProvider>;
+  using Binds = System.Collections.Generic.Dictionary<System.Type, object>;
   using Plugs = System.Collections.Generic.List<WCore.Core>;
-  using Relys = System.Collections.Generic.Dictionary<WCore.Provider.BaseProvider, System.Reflection.FieldInfo[]>;
+  using Relys = System.Collections.Generic.Dictionary<object, System.Reflection.FieldInfo[]>;
 
   public sealed partial class Core {
     #region 默认行为
@@ -15,6 +15,8 @@ namespace WCore {
     };
 
     public Core((Type, Type)[] initRules = null) {
+      _initialize = null;
+      _terminate = null;
       binds = new Binds();
       relys = new Relys();
       plugs = new Plugs();
@@ -25,33 +27,33 @@ namespace WCore {
     #endregion
 
     #region 生命周期
-    public void Init() {
-      foreach (var provider in relys.Keys)
-        provider.OnInit(this);
-    }
+    private Action<Core> _initialize;
+    private Action<Core> _terminate;
 
+    public void Initialize() {
+      _initialize?.Invoke(this);
+    }
     public void Terminate() {
-      foreach (var provider in relys.Keys)
-        provider.OnTerminate(this);
+      _terminate?.Invoke(this);
     }
     #endregion
 
     #region 回调事件
-    public Action<object, object> onProviderChanged;
+    public Action<Type, object, object> onProviderChanged;
     #endregion
 
     #region 服务相关
     private Binds binds;
     private Relys relys;
 
-    public void BindWithoutInterface<P>()
-    where P : BaseProvider, new() {
+    public void Hook<P>()
+    where P : class, new() {
       Bind<P, P>();
     }
 
     public void Bind<I, P>()
     where I : class
-    where P : BaseProvider, I, new() {
+    where P : class, I, new() {
       I oldS; P oldP;
       I newS; P newP;
       if (IsLocal(out oldS)) {
@@ -93,8 +95,7 @@ namespace WCore {
           foreach (var field in pair.Value)
             if (field.FieldType == typeof(I))
               field.SetValue(pair.Key, newP);
-      newP.OnAttach(this);
-      onProviderChanged?.Invoke(oldS, newS);
+      onProviderChanged?.Invoke(typeof(I), oldS, newS);
     }
 
     public void BindList((Type s, Type p)[] bindRules) {
@@ -108,14 +109,10 @@ namespace WCore {
 
     public void UnBind<I>()
     where I : class {
-      if (IsLocal<I>())
-        binds[typeof(I)].OnDetach(this);
       binds.Remove(typeof(I));
     }
 
     public void UnBindAll() {
-      foreach (var pair in binds)
-        pair.Value.OnDetach(this);
       binds.Clear();
     }
 
@@ -136,9 +133,9 @@ namespace WCore {
 
     public bool IsLocal<I>(out I iservice)
     where I : class {
-      BaseProvider service;
+      object service;
       var result = binds.TryGetValue(typeof(I), out service);
-      iservice = (I)(object)service;
+      iservice = (I)service;
       return result;
     }
 

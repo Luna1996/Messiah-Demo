@@ -4,7 +4,7 @@ namespace WCore.Provider {
   using WCore.Interface;
   using Pools = System.Collections.Generic.Dictionary<System.Type, object>;
 
-  public class PoolProvider : BaseProvider, IPoolService {
+  public class PoolProvider : IPoolService {
 
     private Pools pools = new Pools();
 
