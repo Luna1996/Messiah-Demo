@@ -1,9 +1,10 @@
 {
     "name": "Edit",
-    "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
+        "Unity.ResourceManager",
+        "Unity.Addressables",
         "WCore"
     ],
     "includePlatforms": [

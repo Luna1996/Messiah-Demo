@@ -9,7 +9,7 @@ namespace WCore {
 
   public sealed partial class Core {
     #region 默认行为
-    private static (Type, Type)[] defaultRules = {
+    private static (Type, Type)[] build_in = {
       (typeof(IPoolService),typeof(PoolProvider)),
       (typeof(IEventService), typeof(EventProvider))
     };
@@ -18,9 +18,8 @@ namespace WCore {
       binds = new Binds();
       relys = new Relys();
       plugs = new Plugs();
-      if (initRules == null)
-        BindList(defaultRules);
-      else
+      BindList(build_in);
+      if (initRules != null)
         BindList(initRules);
     }
     #endregion
@@ -44,6 +43,11 @@ namespace WCore {
     #region 服务相关
     private Binds binds;
     private Relys relys;
+
+    public void BindWithoutInterface<P>()
+    where P : BaseProvider, new() {
+      Bind<P, P>();
+    }
 
     public void Bind<I, P>()
     where I : class

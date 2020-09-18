@@ -22,6 +22,12 @@ public class TestWCore {
   }
 
   [Test]
+  public void ReflectionTest() {
+    var f = typeof(T).GetMethod("FUCK");
+    Debug.Log(f);
+  }
+
+  [Test]
   public void EnumTest() {
     Enum a = Name.I;
     Enum b = Name2.I;
