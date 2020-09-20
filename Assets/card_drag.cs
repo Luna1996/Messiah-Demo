@@ -11,7 +11,7 @@ public class card_drag : MonoBehaviour,IDragHandler,IPointerDownHandler,IPointer
     // Start is called before the first frame update
     void Start()
     {
-        initPos = (Vector2)transform.position;
+        //initPos = (Vector2)transform.position;
         //wanna_spell = false;
     }
 
@@ -24,6 +24,7 @@ public class card_drag : MonoBehaviour,IDragHandler,IPointerDownHandler,IPointer
     
     public void OnPointerDown(PointerEventData eventData)
     {
+        initPos = (Vector2)transform.position;
         offsetPos = eventData.position - (Vector2)transform.position;
     }
 
