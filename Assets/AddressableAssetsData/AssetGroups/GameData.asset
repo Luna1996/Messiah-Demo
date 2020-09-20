@@ -21,8 +21,14 @@ MonoBehaviour:
     m_Address: DefaultPlayerConfig
     m_ReadOnly: 0
     m_SerializedLabels: []
-    m_MainAsset: {fileID: 4900000, guid: 3503a7dd35ff9764e952babadb181928, type: 3}
-    m_TargetAsset: {fileID: 4900000, guid: 3503a7dd35ff9764e952babadb181928, type: 3}
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: 4f9815c84d47be54aa7e642c1d7f17e9
+    m_Address: CardPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 2a218b642f574354593772b7e9e1bff2, type: 2}
   m_SchemaSet:

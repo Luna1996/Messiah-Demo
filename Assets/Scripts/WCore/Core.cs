@@ -8,15 +8,15 @@ namespace WCore {
   using Relys = System.Collections.Generic.Dictionary<object, System.Reflection.FieldInfo[]>;
 
   public sealed partial class Core {
+
     #region 默认行为
     private static (Type, Type)[] build_in = {
       (typeof(IPoolService),typeof(PoolProvider)),
-      (typeof(IEventService), typeof(EventProvider))
+      (typeof(IEventService), typeof(EventProvider)),
+      (typeof(IStateMachineService), typeof(StateMachineProvider))
     };
 
     public Core((Type, Type)[] initRules = null) {
-      _initialize = null;
-      _terminate = null;
       binds = new Binds();
       relys = new Relys();
       plugs = new Plugs();
@@ -26,30 +26,9 @@ namespace WCore {
     }
     #endregion
 
-    #region 生命周期
-    private Action<Core> _initialize;
-    private Action<Core> _terminate;
-
-    public void Initialize() {
-      _initialize?.Invoke(this);
-    }
-    public void Terminate() {
-      _terminate?.Invoke(this);
-    }
-    #endregion
-
-    #region 回调事件
-    public Action<Type, object, object> onProviderChanged;
-    #endregion
-
     #region 服务相关
     private Binds binds;
     private Relys relys;
-
-    public void Hook<P>()
-    where P : class, new() {
-      Bind<P, P>();
-    }
 
     public void Bind<I, P>()
     where I : class
@@ -95,7 +74,6 @@ namespace WCore {
           foreach (var field in pair.Value)
             if (field.FieldType == typeof(I))
               field.SetValue(pair.Key, newP);
-      onProviderChanged?.Invoke(typeof(I), oldS, newS);
     }
 
     public void BindList((Type s, Type p)[] bindRules) {
@@ -200,5 +178,7 @@ namespace WCore {
       public UnprovidedServiceException(string desc) : base(desc) { }
     }
     #endregion
+
+    public static readonly Core MainCore = new Core();
   }
 }
