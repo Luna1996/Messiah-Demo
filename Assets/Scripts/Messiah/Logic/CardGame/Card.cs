@@ -1,8 +1,7 @@
 namespace Messiah {
   public class Card {
-    public readonly uint id;
-    public Card(uint id) {
-      this.id = id;
-    }
+    public uint id;
+    public string img;
+    public string effect;
   }
 }

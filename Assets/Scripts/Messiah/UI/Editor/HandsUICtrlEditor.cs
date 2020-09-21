@@ -4,73 +4,63 @@ namespace Messiah.Editor {
 
   [CustomEditor(typeof(HandsUICtrl))]
   public class HandsUICtrlEditor : Editor {
-    static GUIContent curvatureLabel = new GUIContent("曲率");
 
     new HandsUICtrl target;
-    SerializedProperty curvature;
+    SerializedProperty s_curvature;
+    SerializedProperty s_widthRatio;
+    SerializedProperty s_handSize;
 
     void OnEnable() {
       target = base.target as HandsUICtrl;
-      curvature = serializedObject.FindProperty(nameof(target.curvature));
-      UpdateTransData();
-      UpdateArcData();
+      s_curvature = serializedObject.FindProperty(nameof(target.m_curvature));
+      s_widthRatio = serializedObject.FindProperty(nameof(target.m_widthRatio));
+      s_handSize = serializedObject.FindProperty(nameof(target.m_handSize));
     }
 
     public override void OnInspectorGUI() {
-      EditorGUI.BeginChangeCheck();
-      EditorGUILayout.Slider(curvature, 0, 1 / transData.halfWidth, curvatureLabel);
-      var curvatureChanged = EditorGUI.EndChangeCheck();
+      EditorGUILayout.Slider(s_curvature, 0, 1, "曲率");
+      EditorGUILayout.Slider(s_widthRatio, 0, 1, "宽度");
       if (serializedObject.hasModifiedProperties) {
         serializedObject.ApplyModifiedProperties();
-        if (curvatureChanged) UpdateArcData();
+        target.UpdateArcData();
+      }
+      EditorGUILayout.IntSlider(s_handSize, 0, 20, "手牌");
+      if (serializedObject.hasModifiedProperties) {
+        serializedObject.ApplyModifiedProperties();
+        if (Application.isPlaying)
+          target.SetFakeHands(target.m_handSize);
       }
     }
 
-    void OnSceneGUI() {
-      var trans = target.transform as RectTransform;
-      if (trans != transData.trans || trans.hasChanged)
-        UpdateTransData();
+    [DrawGizmo(GizmoType.NonSelected | GizmoType.Selected, typeof(HandsUICtrl))]
+    static void DrawTest(HandsUICtrl self, GizmoType gizmoType) {
+      var trans = self.transform as RectTransform;
+      if (trans.hasChanged)
+        self.UpdateArcData();
 
       Handles.color = Color.cyan;
-      if (curvature.floatValue == 0)
+      if (self.m_curvature == 0)
         Handles.DrawLine(
-          transData.rect[0],
-          transData.rect[3]);
+          trans.position - self.transData.halfWidth * trans.right,
+          trans.position + self.transData.halfWidth * trans.right);
       else
         Handles.DrawWireArc(
-          arcData.center,
+          self.arcData.center,
           -trans.forward,
-          arcData.from,
-          arcData.degree,
-          arcData.radius);
-    }
+          self.arcData.from,
+          self.arcData.degree,
+          self.arcData.radius);
 
-    (Vector3 center, Vector3 from, float degree, float radius) arcData =
-    (Vector3.zero, Vector3.zero, 0, 0);
-    void UpdateArcData() {
-      var curvature = this.curvature.floatValue;
-      if (curvature == 0) return;
-      var trans = transData.trans;
-      var rect = transData.rect;
-      var radius = 1 / curvature;
-      var centerPos = trans.position - trans.up * radius;
-      var halfRadian = Mathf.Asin(transData.halfWidth / radius);
-      var startPos = (rect[0] - trans.up * (radius - Mathf.Sqrt(radius * radius - transData.halfWidth * transData.halfWidth))) - centerPos;
-      var degree = Mathf.Rad2Deg * halfRadian * 2;
-
-      arcData.center = centerPos;
-      arcData.from = startPos;
-      arcData.degree = degree;
-      arcData.radius = radius;
-    }
-
-    (RectTransform trans, Vector3[] rect, float halfWidth) transData =
-    (null, new Vector3[4], 0);
-    void UpdateTransData() {
-      transData.trans = target.transform as RectTransform;
-      transData.trans.GetWorldCorners(transData.rect);
-      transData.halfWidth = (transData.rect[0] - transData.rect[3]).magnitude / 2;
-      transData.trans.hasChanged = false;
+      if (self.m_handSize > 0) {
+        Handles.color = Color.red;
+        var dir = self.arcData.from;
+        var rotateStep = Quaternion.AngleAxis(self.arcData.degree / (self.m_handSize + 1), -self.transform.forward);
+        for (int i = 0; i < self.m_handSize; i++) {
+          dir = rotateStep * dir;
+          var pos = self.arcData.center + dir * self.arcData.radius;
+          Handles.DrawLine(pos + dir * 0.1f, pos - dir * 0.1f);
+        }
+      }
     }
   }
 }

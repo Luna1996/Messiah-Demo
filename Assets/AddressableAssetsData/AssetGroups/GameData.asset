@@ -17,6 +17,12 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: 7032d7aef264da04498b231603efdd06
   m_SerializeEntries:
+  - m_GUID: 0336eafae8b5c15488df6ea6e671b6ba
+    m_Address: BG
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
   - m_GUID: 3503a7dd35ff9764e952babadb181928
     m_Address: DefaultPlayerConfig
     m_ReadOnly: 0
@@ -25,6 +31,12 @@ MonoBehaviour:
     m_TargetAsset: {fileID: 0}
   - m_GUID: 4f9815c84d47be54aa7e642c1d7f17e9
     m_Address: CardPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: 7a1fc0666e2fc86418274fda6ec227f3
+    m_Address: Panel
     m_ReadOnly: 0
     m_SerializedLabels: []
     m_MainAsset: {fileID: 0}
