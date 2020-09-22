@@ -82,7 +82,15 @@ namespace Messiah {
         cardui.seq.Insert(0, cardui.transform.DOMove(pos, 0.5f));
         cardui.seq.Insert(0, cardui.transform.DORotateQuaternion(rot, 0.5f));
       }
+
+      
     }
+
+    public void AddRandomCard()
+        {
+            m_handSize += 1;
+            AddCard(null);
+        }
 
     [NonSerialized]
     public (Vector3[] rect, float halfWidth) transData =
